@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Executable archive name with replaced release version tag
         id: executable-archive-name
-        #'Simple' variable remplacement. We use the bash replace syntax as it is the default shell on github runners
+        #'Simple' variable replacement. We use the bash replace syntax as it is the default shell on github runners
         run: |
           EXECUTABLE_ARCHIVE_NAME=${{ env.executable-archive-name-pattern }}
           RELEASE_TAG_VERSION=${{ needs.get-release-version.outputs.release-tag-version }}
