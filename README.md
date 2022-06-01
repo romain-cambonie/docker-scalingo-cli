@@ -5,6 +5,10 @@
 Image docker de la cli scalingo en vue d'une intégration CI.
 contient aussi le nécessaire pour générer des clefs ssh à usage unique pour les déploiments
 
+## Setup repository variables
+DOCKERHUB_USERNAME 
+DOCKERHUB_TOKEN => [to generate an access tolen follow these instructions ~5min](https://docs.docker.com/docker-hub/access-tokens/)
+
 ### TO DOCUMENT
 
 :warning Do NOT put a comment between two instruction on a multiline script, the yaml validation will not fail but you'll have this not explicit error when trying to run your workflow.
