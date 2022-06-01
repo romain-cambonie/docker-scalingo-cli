@@ -9,7 +9,7 @@ on:
 
 env:
   target-repository: 'scalingo/cli'
-  executable-archive-name-pattern: 'scalingo_$RELEASE_TAG_VERSION_linux_386'
+  executable-archive-name-pattern: 'scalingo_RELEASE_TAG_VERSION_linux_386'
   executable-archive-extention: 'tar.gz'
   executable-name: 'scalingo'
 
@@ -37,10 +37,11 @@ jobs:
     steps:
       - name: Executable archive name with replaced release version tag
         id: executable-archive-name
+        #'Simple' variable remplacement. We use the bash replace syntax as it is the default shell on github runners
         run: |
           EXECUTABLE_ARCHIVE_NAME=${{ env.executable-archive-name-pattern }}
           RELEASE_TAG_VERSION=${{ needs.get-release-version.outputs.release-tag-version }}
-          sed -i 's/$RELEASE_TAG_VERSION/"$RELEASE_TAG_VERSION"/g' $EXECUTABLE_ARCHIVE_NAME
+          EXECUTABLE_ARCHIVE_NAME=${EXECUTABLE_ARCHIVE_NAME//RELEASE_TAG_VERSION/"$RELEASE_TAG_VERSION"}     
           echo "::set-output name=value::$EXECUTABLE_ARCHIVE_NAME"
 
       - name: Executable name from environment variable
@@ -67,15 +68,16 @@ jobs:
       - dynamic-variables
     runs-on: ubuntu-latest
     steps:
-      - name: Generate the target dockerfile by replacing the variables in template model
+      - name: Retrieve the repository files
+        uses: actions/checkout@v3
+
+      - name: Generate the target dockerfile by replacing the variables in Dockerfile_template template
         run: |
-          RAW_DOCKERFILE=$(cat ./Dockerfile_template)
-          sed -i 's/$RELEASE_TAG_VERSION/"${{ needs.get-release-version.outputs.release-tag-version }}"/g' $RAW_DOCKERFILE
-          sed -i 's/$TARGET_REPOSITORY/"${{ needs.dynamic-variables.outputs.target-repository }}"/g' $RAW_DOCKERFILE
-          sed -i 's/$EXECUTABLE_ARCHIVE_NAME_PATTERN/"${{ needs.dynamic-variables.outputs.executable-archive-name }}"/g' $RAW_DOCKERFILE
-          sed -i 's/$EXECUTABLE_ARCHIVE_EXTENTION/"${{ needs.dynamic-variables.outputs.executable-archive-extention }}"/g' $RAW_DOCKERFILE
-          sed -i 's/$EXECUTABLE_NAME/"${{ needs.dynamic-variables.outputs.executable-name }}"/g' $RAW_DOCKERFILE
-          echo "$RAW_DOCKERFILE" > ./Dockerfile
+          sed -i 's|RELEASE_TAG_VERSION|${{ needs.get-release-version.outputs.release-tag-version }}|g' Dockerfile
+          sed -i 's|TARGET_REPOSITORY|${{ needs.dynamic-variables.outputs.target-repository }}|g' Dockerfile
+          sed -i 's|EXECUTABLE_ARCHIVE_NAME_PATTERN|${{ needs.dynamic-variables.outputs.executable-archive-name }}|g' Dockerfile
+          sed -i 's|EXECUTABLE_ARCHIVE_EXTENTION|${{ needs.dynamic-variables.outputs.executable-archive-extention }}|g' Dockerfile
+          sed -i 's|EXECUTABLE_NAME|${{ needs.dynamic-variables.outputs.executable-name }}|g' Dockerfile
 
       - name: Upload resulting Dockerfile as artifact for reference
         uses: actions/upload-artifact@v3
