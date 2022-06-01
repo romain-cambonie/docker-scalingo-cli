@@ -1,0 +1,84 @@
+name: Release the up-to-date container on dockerhub following cli releases.
+# Every morning around 8:00 GMT
+
+on:
+  workflow_dispatch:
+#  schedule:
+#    #Monday through Friday around 7:00 UTC (not using exact hours helps with runners availability)
+#    - cron: '58 6 * * 1,2,3,4,5'
+
+env:
+  target-repository: 'scalingo/cli'
+  executable-archive-name-pattern: 'scalingo_$RELEASE_TAG_VERSION_linux_386'
+  executable-archive-extention: 'tar.gz'
+  executable-name: 'scalingo'
+
+jobs:
+  get-release-version:
+    runs-on: ubuntu-latest
+    outputs:
+      release-tag-version: ${{ steps.latest-release-info.outputs.tag-version }}
+    steps:
+      - name: Get target release version
+        id: latest-release-info
+        run: |
+          RELEASE_TAG_VERSION=$(curl --silent "https://api.github.com/repos/${{ env.target-repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "::set-output name=tag-version::$RELEASE_TAG_VERSION"
+
+  dynamic-variables:
+    needs:
+      - get-release-version
+    outputs:
+      executable-name: ${{ steps.executable-name.outputs.value }}
+      executable-archive-name: ${{ steps.executable-archive-name.outputs.value }}
+      executable-archive-extention: ${{ steps.executable-archive-extention.outputs.value }}
+      target-repository: ${{ steps.target-repository.outputs.value }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executable archive name with replaced release version tag
+        id: executable-archive-name
+        run: |
+          EXECUTABLE_ARCHIVE_NAME=${{ env.executable-archive-name-pattern }}
+          RELEASE_TAG_VERSION=${{ needs.get-release-version.outputs.release-tag-version }}
+          sed -i 's/$RELEASE_TAG_VERSION/"$RELEASE_TAG_VERSION"/g' $EXECUTABLE_ARCHIVE_NAME
+          echo "::set-output name=value::$EXECUTABLE_ARCHIVE_NAME"
+
+      - name: Executable name from environment variable
+        id: executable-name
+        run: |
+          EXECUTABLE_NAME=${{ env.executable-name }}
+          echo "::set-output name=value::$EXECUTABLE_NAME"
+
+      - name: Executable archive file extention from environment variable
+        id: executable-archive-extention
+        run: |
+          EXECUTABLE_ARCHIVE_EXTENTION=${{ env.executable-archive-extention }}
+          echo "::set-output name=value::$EXECUTABLE_ARCHIVE_EXTENTION"
+
+      - name: Target repository from environment variable
+        id: target-repository
+        run: |
+          TARGET_REPOSITORY=${{ env.target-repository }}
+          echo "::set-output name=value::$TARGET_REPOSITORY"
+
+  dockerfile-from-template:
+    needs:
+      - get-release-version
+      - dynamic-variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate the target dockerfile by replacing the variables in template model
+        run: |
+          RAW_DOCKERFILE=$(cat ./Dockerfile_template)
+          sed -i 's/$RELEASE_TAG_VERSION/"${{ needs.get-release-version.outputs.release-tag-version }}"/g' $RAW_DOCKERFILE
+          sed -i 's/$TARGET_REPOSITORY/"${{ needs.dynamic-variables.outputs.target-repository }}"/g' $RAW_DOCKERFILE
+          sed -i 's/$EXECUTABLE_ARCHIVE_NAME_PATTERN/"${{ needs.dynamic-variables.outputs.executable-archive-name }}"/g' $RAW_DOCKERFILE
+          sed -i 's/$EXECUTABLE_ARCHIVE_EXTENTION/"${{ needs.dynamic-variables.outputs.executable-archive-extention }}"/g' $RAW_DOCKERFILE
+          sed -i 's/$EXECUTABLE_NAME/"${{ needs.dynamic-variables.outputs.executable-name }}"/g' $RAW_DOCKERFILE
+          echo "$RAW_DOCKERFILE" > ./Dockerfile
+
+      - name: Upload resulting Dockerfile as artifact for reference
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-dockerfile
+          path: ./Dockerfile
