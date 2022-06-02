@@ -17,7 +17,6 @@ DOCKERHUB_TOKEN => [to generate an access tolen follow these instructions ~5min]
 
 ### TODO
 - Factoriser en passant sur serenity-workflows.
-- Notify discord
 
 - Améliorer l'interaction avec l'api gh en filtrant le retour curl en json avec jq (https://stackoverflow.com/questions/62595453/filtering-from-json-output-from-curl-using-jq)
   Objectif obtenir le "browser_download_url" du champ 'assets' qui à le 'name' qui contient la 'target_architecture'.
