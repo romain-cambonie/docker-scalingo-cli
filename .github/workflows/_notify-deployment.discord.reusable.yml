@@ -1,0 +1,23 @@
+name: Reusable Discord Deployment Notify Workflow
+
+on:
+  workflow_call:
+    inputs:
+      application-full-name:
+        required: true
+        type: string
+      tag-version:
+        required: true
+        type: string
+
+    secrets:
+      DISCORD_NOTIFY_HOOK_URL:
+        required: true
+
+jobs:
+  discord-notify-instance-url:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify discord hooked canal
+        run: |
+          curl --header "Content-Type:application/json" -d "{\"username\":\"Docker deployer\", \"content\":\"Une nouvelle version de ${{ inputs.application-full-name }}:${{ inputs.tag-version }} est disponible. \"}" ${{ secrets.DISCORD_NOTIFY_HOOK_URL }}
