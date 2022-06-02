@@ -1,11 +1,11 @@
-name: Release the up-to-date container on dockerhub following cli releases.
+name: Nightly release the up-to-date container on dockerhub following cli releases.
 # Every morning around 8:00 GMT
 
 on:
   workflow_dispatch:
-#  schedule:
-#    #Monday through Friday around 7:00 UTC (not using exact hours helps with runners availability)
-#    - cron: '58 6 * * 1,2,3,4,5'
+  schedule:
+  #Everyday at around 4:00 UTC (not using exact hours helps with runners availability)
+    - cron: '58 3 * * *'
 
 env:
   executable-name: 'scalingo'
@@ -16,25 +16,37 @@ env:
 
 jobs:
   get-release-version:
+    name: Get target executable latest release version and check if a tag with the same value exist on the dockerhub registry.
     runs-on: ubuntu-latest
     outputs:
       release-tag-version: ${{ steps.latest-release-info.outputs.tag-version }}
+      tag-already-exist-on-registry: ${{ steps.latest-release-info.outputs.tag-already-exist-on-registry }}
+
     steps:
-      - name: Get target release version
+      - name: Get target release version and check if a tag with the same value exist on the dockerhub registry
         id: latest-release-info
         run: |
           RELEASE_TAG_VERSION=$(curl --silent "https://api.github.com/repos/${{ env.target-repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          SAME_TAG_ALREADY_EXIST_ON_REGISTRY=$(curl --silent 'https://registry.hub.docker.com/v2/repositories/rcambonie/scalingo-cli/tags' | grep -c "\"$RELEASE_TAG_VERSION\"")
           echo "::set-output name=tag-version::$RELEASE_TAG_VERSION"
+          echo "::set-output name=tag-already-exist-on-registry::$SAME_TAG_ALREADY_EXIST_ON_REGISTRY"
+
 
   dynamic-variables:
+    #Skipped if the tag is already present in the target registry
+    if: ${{ needs.get-release-version.outputs.tag-already-exist-on-registry != 1  }}
+    name: Generate variables used in the following jobs from the environment variables and secrets.
+    runs-on: ubuntu-latest
     needs:
       - get-release-version
+
     outputs:
       executable-name: ${{ steps.executable-name.outputs.value }}
       executable-archive-name: ${{ steps.executable-archive-name.outputs.value }}
       executable-archive-extention: ${{ steps.executable-archive-extention.outputs.value }}
       target-repository: ${{ steps.target-repository.outputs.value }}
-    runs-on: ubuntu-latest
+      is-discord-hooked: ${{ steps.is-discord-hooked.outputs.value }}
+
     steps:
       - name: Executable archive name with replaced release version tag
         id: executable-archive-name
@@ -63,11 +75,20 @@ jobs:
           TARGET_REPOSITORY=${{ env.target-repository }}
           echo "::set-output name=value::$TARGET_REPOSITORY"
 
+      - name: Has a discord webhook for notification been defined
+        id: is-discord-hooked
+        run: |
+          IS_HOOKED=${{ secrets.DISCORD_NOTIFY_HOOK_URL != '' }}
+          echo "::set-output name=value::$IS_HOOKED"
+
+
   dockerfile-from-template:
+    name: Generate a Dockerfile from a base template with replaced variables
+    runs-on: ubuntu-latest
     needs:
       - get-release-version
       - dynamic-variables
-    runs-on: ubuntu-latest
+
     steps:
       - name: Retrieve the repository files
         uses: actions/checkout@v3
@@ -86,12 +107,15 @@ jobs:
           name: generated-dockerfile
           path: ./Dockerfile
 
+
+
   build-and-push-docker-image:
-    name: Build Docker image and push to repositories
+    name: Build Docker image and push to registry if on master branch
     runs-on: ubuntu-latest
     needs:
       - get-release-version
       - dockerfile-from-template
+
     steps:
       - name: Retrieve Dockerfile
         uses: actions/download-artifact@v3
@@ -115,5 +139,22 @@ jobs:
           tags: |
             ${{ env.target-dockerhub-registry }}:latest 
             ${{ env.target-dockerhub-registry }}:${{ needs.get-release-version.outputs.release-tag-version }}
-          # build on feature branches, push only on master branch
-          push: ${{ github.ref == 'refs/heads/master' }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.ref == 'refs/heads/main' }}
+
+
+  notify-discord:
+    name: Discord Notification
+    if: ${{ needs.dynamic-variables.outputs.is-discord-hooked == 'true' }}
+    needs:
+      - get-release-version
+      - dynamic-variables
+      - build-and-push-docker-image
+
+    uses: ./.github/workflows/_notify-deployment.discord.reusable.yml
+    with:
+      application-full-name: ${{ needs.dynamic-variables.outputs.target-repository }}
+      tag-version: ${{ needs.get-release-version.outputs.release-tag-version }}
+    secrets:
+      DISCORD_NOTIFY_HOOK_URL: ${{ secrets.DISCORD_NOTIFY_HOOK_URL }}
+
