@@ -49,6 +49,7 @@ jobs:
       executable-archive-name: ${{ steps.executable-archive-name.outputs.value }}
       executable-archive-extention: ${{ steps.executable-archive-extention.outputs.value }}
       target-repository: ${{ steps.target-repository.outputs.value }}
+      target-dockerhub-registry: ${{ steps.target-dockerhub-registry.outputs.value }}
       is-discord-hooked: ${{ steps.is-discord-hooked.outputs.value }}
 
     steps:
@@ -78,6 +79,12 @@ jobs:
         run: |
           TARGET_REPOSITORY=${{ env.target-repository }}
           echo "::set-output name=value::$TARGET_REPOSITORY"
+
+      - name: Target repository fully qualified name
+        id: target-dockerhub-registry
+        run: |
+          TARGET_DOCKERHUB_REPOSITORY=${{ env.target-dockerhub-registry }}
+          echo "::set-output name=value::$TARGET_DOCKERHUB_REPOSITORY"
 
       - name: Has a discord webhook for notification been defined
         id: is-discord-hooked
@@ -157,7 +164,7 @@ jobs:
 
     uses: ./.github/workflows/_notify-deployment.discord.reusable.yml
     with:
-      application-full-name: ${{ env.target-dockerhub-registry }}
+      application-full-name: ${{ needs.dynamic-variables.outputs.target-dockerhub-registry }}
       tag-version: ${{ needs.get-release-version.outputs.release-tag-version }}
     secrets:
       DISCORD_NOTIFY_HOOK_URL: ${{ secrets.DISCORD_NOTIFY_HOOK_URL }}
