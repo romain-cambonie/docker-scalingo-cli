@@ -93,7 +93,7 @@ jobs:
     name: Discord Notification
     if: ${{ needs.dynamic-variables.outputs.is-discord-hooked == 'true' }}
     needs:
-      - build-and-release-from-github
+      - build-and-release-to-dockerhub
 
     uses: ./.github/workflows/_notify-deployment.discord.reusable.yml
     with:
