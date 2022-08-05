@@ -72,7 +72,7 @@ jobs:
     uses: ./.github/workflows/_get-release-version.reusable.yml
     with:
       target-dockerhub-registry: ${{ needs.dynamic-variables.outputs.target-dockerhub-registry }}
-      target-registry: ${{ needs.dynamic-variables.outputs.target-repository }}
+      target-repository: ${{ needs.dynamic-variables.outputs.target-repository }}
 
   build-and-release-to-dockerhub:
     #Skipped if the tag is already present in the target registry
@@ -84,7 +84,7 @@ jobs:
     with:
       from-image: alpine:latest
       release-tag-version: ${{ needs.get-release-version.outputs.release-tag-version }}
-      target-repository: ${{ env.target-repository }}
+      target-repository: ${{ needs.dynamic-variables.outputs.target-repository }}
       executable-archive-name: ${{ needs.dynamic-variables.outputs.executable-archive-name }}
       executable-archive-extention: ${{ needs.dynamic-variables.outputs.executable-archive-extention }}
       executable-name: ${{ needs.dynamic-variables.outputs.executable-name }}
