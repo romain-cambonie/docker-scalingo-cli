@@ -21,6 +21,12 @@ on:
         required: true
         type: string
 
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
 jobs:
   dockerfile-from-template:
     name: Generate a Dockerfile from a base template with replaced variables
