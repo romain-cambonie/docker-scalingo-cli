@@ -80,8 +80,8 @@ jobs:
         with:
           context: .
           tags: |
-            ${{ env.target-dockerhub-registry }}:latest 
-            ${{ env.target-dockerhub-registry }}:${{ inputs.release-tag-version }}
+            ${{ inputs.target-dockerhub-registry }}:latest 
+            ${{ inputs.target-dockerhub-registry }}:${{ inputs.release-tag-version }}
           # build on feature branches, push only on master branch
           push: ${{ github.ref == 'refs/heads/master' }}
 
