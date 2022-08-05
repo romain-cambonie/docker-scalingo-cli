@@ -2,22 +2,25 @@ name: Reusable Build and release the image to dockerhub with the release tags
 on:
   workflow_call:
     inputs:
+      executable-archive-extention:
+        required: true
+        type: string
+      executable-archive-name:
+        required: true
+        type: string
+      executable-name:
+        required: true
+        type: string
       from-image:
         required: true
         type: string
       release-tag-version:
         required: true
         type: string
+      target-dockerhub-registry:
+        required: true
+        type: string
       target-repository:
-        required: true
-        type: string
-      executable-archive-name:
-        required: true
-        type: string
-      executable-archive-extention:
-        required: true
-        type: string
-      executable-name:
         required: true
         type: string
 
