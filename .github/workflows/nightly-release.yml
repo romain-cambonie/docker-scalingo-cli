@@ -15,7 +15,7 @@ env:
 
 jobs:
   get-release-version:
-    uses: ./.github/workflows/get-release-version.reusable.yml
+    uses: ./.github/workflows/_get-release-version.reusable.yml
     with:
       target-dockerhub-registry: ${{ env.target-dockerhub-registry }}
       target-registry: ${{ env.target-repository }}
