@@ -1,4 +1,4 @@
-name: Reusable get latest release version from github repository and if this release has already been pushed on dockerhub registry
+name: Reusable get latest release version from github repository
 on:
   workflow_call:
     inputs:
@@ -10,8 +10,12 @@ on:
         type: string
 
     outputs:
-      release-tag-version: ${{ jobs.get-release-version.outputs.release-tag-version }}
-      tag-already-exist-on-registry: ${{ jobs.get-release-version.outputs.tag-already-exist-on-registry }}
+      release-tag-version:
+        description: 'The release version of the target repository'
+        value: ${{ jobs.get-release-version.outputs.release-tag-version }}
+      tag-already-exist-on-registry:
+        description: 'A corresponding image with this tag version is already on dockerhub'
+        value: ${{ jobs.get-release-version.outputs.tag-already-exist-on-registry }}
 
 jobs:
   get-release-version:
