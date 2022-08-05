@@ -88,6 +88,9 @@ jobs:
       executable-archive-name: ${{ needs.dynamic-variables.outputs.executable-archive-name }}
       executable-archive-extention: ${{ needs.dynamic-variables.outputs.executable-archive-extention }}
       executable-name: ${{ needs.dynamic-variables.outputs.executable-name }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   notify-discord:
     name: Discord Notification
