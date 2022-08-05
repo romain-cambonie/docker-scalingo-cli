@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM FROM_IMAGE
 RUN apk update && apk upgrade
 RUN apk add bash openssh-keygen
 WORKDIR /bin

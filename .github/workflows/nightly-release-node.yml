@@ -1,17 +1,17 @@
-name: Nightly release the up-to-date container on dockerhub following cli releases.
+name: Nightly release the up-to-date container from node image on dockerhub following cli releases.
 
 on:
   workflow_dispatch:
   schedule:
-  #Everyday at around 4:00 UTC (not using exact hours helps with runners availability)
-    - cron: '58 3 * * *'
+    #Everyday at around 4:00 UTC (not using exact hours helps with runners availability)
+    - cron: '02 4 * * *'
 
 env:
   executable-name: 'scalingo'
   executable-archive-name-pattern: 'scalingo_RELEASE_TAG_VERSION_linux_386'
   executable-archive-extention: 'tar.gz'
   target-repository: 'scalingo/cli'
-  target-dockerhub-registry: 'rcambonie/scalingo-cli'
+  target-dockerhub-registry: 'rcambonie/scalingo-cli-node'
 
 jobs:
   get-release-version:
@@ -79,7 +79,7 @@ jobs:
   build-and-release-to-dockerhub:
     uses: ./.github/workflows/_build-and-release-to-dockerhub.reusable.yml
     with:
-      from-image: alpine:latest
+      from-image: node:lts-alpine
       release-tag-version: ${{ needs.get-release-version.outputs.release-tag-version }}
       target-repository: ${{ env.target-repository }}
       executable-archive-name: ${{ needs.dynamic-variables.outputs.executable-archive-name }}
@@ -98,4 +98,3 @@ jobs:
       tag-version: ${{ needs.get-release-version.outputs.release-tag-version }}
     secrets:
       DISCORD_NOTIFY_HOOK_URL: ${{ secrets.DISCORD_NOTIFY_HOOK_URL }}
-

@@ -1,0 +1,81 @@
+name: Build and release the image to dockerhub with the release tags
+on:
+  workflow_call:
+    inputs:
+      from-image:
+        required: true
+        type: string
+      release-tag-version:
+        required: true
+        type: string
+      target-repository:
+        required: true
+        type: string
+      executable-archive-name:
+        required: true
+        type: string
+      executable-archive-extention:
+        required: true
+        type: string
+      executable-name:
+        required: true
+        type: string
+
+jobs:
+  dockerfile-from-template:
+    name: Generate a Dockerfile from a base template with replaced variables
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Retrieve the repository files
+        uses: actions/checkout@v3
+
+      - name: Generate the target dockerfile by replacing the variables in Dockerfile template
+        run: |
+          sed -i 's|FROM_IMAGE|${{ inputs.from-image }}|g' Dockerfile
+          sed -i 's|RELEASE_TAG_VERSION|${{ inputs.release-tag-version }}|g' Dockerfile
+          sed -i 's|TARGET_REPOSITORY|${{ inputs.target-repository }}|g' Dockerfile
+          sed -i 's|EXECUTABLE_ARCHIVE_NAME_PATTERN|${{ inputs.executable-archive-name }}|g' Dockerfile
+          sed -i 's|EXECUTABLE_ARCHIVE_EXTENTION|${{ inputs.executable-archive-extention }}|g' Dockerfile
+          sed -i 's|EXECUTABLE_NAME|${{ inputs.executable-name }}|g' Dockerfile
+
+      - name: Upload resulting Dockerfile as artifact for reference
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-dockerfile
+          path: ./Dockerfile
+
+
+
+  build-and-push-docker-image:
+    name: Build Docker image and push to registry if on master branch
+    runs-on: ubuntu-latest
+    needs:
+      - dockerfile-from-template
+
+    steps:
+      - name: Retrieve Dockerfile
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-dockerfile
+          path: .
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build image and push to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          tags: |
+            ${{ env.target-dockerhub-registry }}:latest 
+            ${{ env.target-dockerhub-registry }}:${{ inputs.release-tag-version }}
+          # build on feature branches, push only on master branch
+          push: ${{ github.ref == 'refs/heads/master' }}
+
