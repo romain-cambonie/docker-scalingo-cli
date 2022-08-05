@@ -14,19 +14,9 @@ env:
   target-dockerhub-registry: 'rcambonie/scalingo-cli'
 
 jobs:
-  get-release-version:
-    uses: ./.github/workflows/_get-release-version.reusable.yml
-    with:
-      target-dockerhub-registry: ${{ env.target-dockerhub-registry }}
-      target-registry: ${{ env.target-repository }}
-
   dynamic-variables:
-    #Skipped if the tag is already present in the target registry
-    if: ${{ needs.get-release-version.outputs.tag-already-exist-on-registry == 0  }}
     name: Generate variables used in the following jobs from the environment variables and secrets.
     runs-on: ubuntu-latest
-    needs:
-      - get-release-version
 
     outputs:
       executable-name: ${{ steps.executable-name.outputs.value }}
@@ -76,7 +66,20 @@ jobs:
           IS_HOOKED=${{ secrets.DISCORD_NOTIFY_HOOK_URL != '' }}
           echo "::set-output name=value::$IS_HOOKED"
 
+  get-release-version:
+    needs:
+      - dynamic-variables
+    uses: ./.github/workflows/_get-release-version.reusable.yml
+    with:
+      target-dockerhub-registry: ${{ needs.dynamic-variables.outputs.target-dockerhub-registry }}
+      target-registry: ${{ needs.dynamic-variables.outputs.target-repository }}
+
   build-and-release-to-dockerhub:
+    #Skipped if the tag is already present in the target registry
+    if: ${{ needs.get-release-version.outputs.tag-already-exist-on-registry == 0  }}
+    needs:
+      - dynamic-variables
+      - get-release-version
     uses: ./.github/workflows/_build-and-release-to-dockerhub.reusable.yml
     with:
       from-image: alpine:latest
