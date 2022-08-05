@@ -1,4 +1,4 @@
-name: Build and release the image to dockerhub with the release tags
+name: Reusable Build and release the image to dockerhub with the release tags
 on:
   workflow_call:
     inputs:
