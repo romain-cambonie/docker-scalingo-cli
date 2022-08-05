@@ -7,11 +7,11 @@ on:
     - cron: '58 3 * * *'
 
 env:
-  executable-name: 'scalingo'
-  executable-archive-name-pattern: 'scalingo_RELEASE_TAG_VERSION_linux_386'
   executable-archive-extention: 'tar.gz'
-  target-repository: 'scalingo/cli'
+  executable-archive-name-pattern: 'scalingo_RELEASE_TAG_VERSION_linux_386'
+  executable-name: 'scalingo'
   target-dockerhub-registry: 'rcambonie/scalingo-cli'
+  target-repository: 'scalingo/cli'
 
 jobs:
   dynamic-variables:
@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      executable-name: ${{ steps.executable-name.outputs.value }}
-      executable-archive-name: ${{ steps.executable-archive-name.outputs.value }}
       executable-archive-extention: ${{ steps.executable-archive-extention.outputs.value }}
-      target-repository: ${{ steps.target-repository.outputs.value }}
-      target-dockerhub-registry: ${{ steps.target-dockerhub-registry.outputs.value }}
+      executable-archive-name: ${{ steps.executable-archive-name.outputs.value }}
+      executable-name: ${{ steps.executable-name.outputs.value }}
       is-discord-hooked: ${{ steps.is-discord-hooked.outputs.value }}
+      target-dockerhub-registry: ${{ steps.target-dockerhub-registry.outputs.value }}
+      target-repository: ${{ steps.target-repository.outputs.value }}
 
     steps:
       - name: Executable archive name with replaced release version tag
@@ -82,15 +82,17 @@ jobs:
       - get-release-version
     uses: ./.github/workflows/_build-and-release-to-dockerhub.reusable.yml
     with:
+      executable-archive-extention: ${{ needs.dynamic-variables.outputs.executable-archive-extention }}
+      executable-archive-name: ${{ needs.dynamic-variables.outputs.executable-archive-name }}
+      executable-name: ${{ needs.dynamic-variables.outputs.executable-name }}
       from-image: alpine:latest
       release-tag-version: ${{ needs.get-release-version.outputs.release-tag-version }}
+      target-dockerhub-registry: ${{ needs.dynamic-variables.outputs.target-dockerhub-registry }}
       target-repository: ${{ needs.dynamic-variables.outputs.target-repository }}
-      executable-archive-name: ${{ needs.dynamic-variables.outputs.executable-archive-name }}
-      executable-archive-extention: ${{ needs.dynamic-variables.outputs.executable-archive-extention }}
-      executable-name: ${{ needs.dynamic-variables.outputs.executable-name }}
+
     secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
   notify-discord:
     name: Discord Notification
