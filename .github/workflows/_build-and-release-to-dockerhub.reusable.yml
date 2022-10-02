@@ -1,25 +1,34 @@
-name: Build and release the image to dockerhub with the release tags
+name: Reusable Build and release the image to dockerhub with the release tags
 on:
   workflow_call:
     inputs:
+      executable-archive-extention:
+        required: true
+        type: string
+      executable-archive-name:
+        required: true
+        type: string
+      executable-name:
+        required: true
+        type: string
       from-image:
         required: true
         type: string
       release-tag-version:
         required: true
         type: string
+      target-dockerhub-registry:
+        required: true
+        type: string
       target-repository:
         required: true
         type: string
-      executable-archive-name:
+
+    secrets:
+      DOCKERHUB_USERNAME:
         required: true
-        type: string
-      executable-archive-extention:
+      DOCKERHUB_TOKEN:
         required: true
-        type: string
-      executable-name:
-        required: true
-        type: string
 
 jobs:
   dockerfile-from-template:
@@ -74,8 +83,8 @@ jobs:
         with:
           context: .
           tags: |
-            ${{ env.target-dockerhub-registry }}:latest 
-            ${{ env.target-dockerhub-registry }}:${{ inputs.release-tag-version }}
+            ${{ inputs.target-dockerhub-registry }}:latest 
+            ${{ inputs.target-dockerhub-registry }}:${{ inputs.release-tag-version }}
           # build on feature branches, push only on master branch
           push: ${{ github.ref == 'refs/heads/master' }}
 
