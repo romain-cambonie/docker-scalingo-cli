@@ -6,10 +6,6 @@
 Image docker de la cli scalingo en vue d'une intégration CI.
 Contient aussi le nécessaire pour générer des clefs ssh à usage unique pour les déploiements
 
-# Variante
-## Avec Node
-Pour certaines opérations (eg: migration de bdd) il est souhaitable de pouvoir executer des scripts nodes.
-
 # Usage 
 # Tester la cli en local pour le développement
 ```sh
