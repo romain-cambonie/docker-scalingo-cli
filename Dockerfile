@@ -1,6 +1,6 @@
 FROM FROM_IMAGE
 RUN apk update && apk upgrade
-RUN apk add bash openssh-keygen
+RUN apk add bash openssh-keygen gnupg
 WORKDIR /bin
 RUN wget https://github.com/TARGET_REPOSITORY/releases/download/RELEASE_TAG_VERSION/EXECUTABLE_ARCHIVE_NAME_PATTERN.EXECUTABLE_ARCHIVE_EXTENTION
 RUN tar -zxvf EXECUTABLE_ARCHIVE_NAME_PATTERN.EXECUTABLE_ARCHIVE_EXTENTION

@@ -4,7 +4,10 @@
 
 # Base
 Image docker de la cli scalingo en vue d'une intégration CI.
-Contient aussi le nécessaire pour générer des clefs ssh à usage unique pour les déploiements
+
+Contient aussi:
+openssh : pour générer des clefs ssh à usage unique pour les déploiements vers repository git
+gnupg: pour permettre simplement d'encrypter des secrets afin de les passer entre jobs de ci
 
 # Usage 
 # Tester la cli en local pour le développement
@@ -20,12 +23,6 @@ scalingo login --api-token=TOKEN
 ## Setup repository variables
 DOCKERHUB_USERNAME
 DOCKERHUB_TOKEN => [to generate an access tolen follow these instructions ~5min](https://docs.docker.com/docker-hub/access-tokens/)
-
-## TO DOCUMENT
-
-:warning: Do NOT put a comment between two instruction on a multiline script, the yaml validation will not fail but you'll have this not explicit error when trying to run your workflow.
-
-![img.png](img.png)
 
 ## TODO
 - Factoriser en passant sur serenity-workflows.
